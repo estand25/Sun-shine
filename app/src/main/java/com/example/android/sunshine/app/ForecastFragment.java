@@ -151,7 +151,7 @@ public class ForecastFragment extends Fragment {
          * into an Object hierarchy for us.
          */
         private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays)
-                throws JSONException {
+            throws JSONException {
 
             // These are the names of the JSON objects that need to be extracted.
             final String OWM_LIST = "list";
