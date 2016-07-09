@@ -49,6 +49,7 @@ public class WeatherDbHelper extends SQLiteOpenHelper {
                 LocationEntry.COLUMN_COORD_LONG + " REAL NOT NULL); ";
 
         sqLiteDatabase.execSQL(SQL_CREATE_LOCATION_TABLE);
+
         final String SQL_CREATE_WEATHER_TABLE = "CREATE TABLE " + WeatherEntry.TABLE_NAME + " (" +
                 // Why AutoIncrement here, and not above?
                 // Unique keys will be auto-generated in either case.  But for weather
