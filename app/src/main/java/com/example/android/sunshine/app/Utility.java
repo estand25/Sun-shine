@@ -45,14 +45,14 @@ public class Utility {
         } else {
             temp = temperature;
         }
-        //return String.format("%.0f", temp);
-        return context.getString(R.string.format_temperature,temp);
+        return context.getString(R.string.format_temperature, temp);
     }
 
-    static String formatDate(long dateInMillis) {
-        Date date = new Date(dateInMillis);
+    static String formatDate(long dateInMilliseconds) {
+        Date date = new Date(dateInMilliseconds);
         return DateFormat.getDateInstance().format(date);
     }
+
     // Format used for storing dates in the database.  ALso used for converting those strings
     // back into date objects for comparison/processing.
     public static final String DATE_FORMAT = "yyyyMMdd";
@@ -174,6 +174,7 @@ public class Utility {
         }
         return String.format(context.getString(windFormat), windSpeed, direction);
     }
+
     /**
      * Helper method to provide the icon resource id according to the weather condition id returned
      * by the OpenWeatherMap call.
@@ -213,7 +214,7 @@ public class Utility {
      * Helper method to provide the art resource id according to the weather condition id returned
      * by the OpenWeatherMap call.
      * @param weatherId from OpenWeatherMap API response
-     * @return resource id for the corresponding image. -1 if no relation is found.
+     * @return resource id for the corresponding icon. -1 if no relation is found.
      */
     public static int getArtResourceForWeatherCondition(int weatherId) {
         // Based on weather code data found at:
@@ -229,7 +230,7 @@ public class Utility {
         } else if (weatherId >= 520 && weatherId <= 531) {
             return R.drawable.art_rain;
         } else if (weatherId >= 600 && weatherId <= 622) {
-            return R.drawable.art_rain;
+            return R.drawable.art_snow;
         } else if (weatherId >= 701 && weatherId <= 761) {
             return R.drawable.art_fog;
         } else if (weatherId == 761 || weatherId == 781) {
