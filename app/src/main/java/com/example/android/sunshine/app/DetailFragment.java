@@ -1,8 +1,19 @@
-package com.example.android.sunshine.app;
-
-/**
- * Created by StandleyEugene on 7/9/2016.
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+package com.example.android.sunshine.app;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -24,39 +35,39 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.android.sunshine.app.data.WeatherContract;
+import com.example.android.sunshine.app.data.WeatherContract.WeatherEntry;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>  {
+public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
+
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
+
     private ShareActionProvider mShareActionProvider;
-    private static final int DETAIL_LOADER = 0;
     private String mForecast;
+
+    private static final int DETAIL_LOADER = 0;
+
     private static final String[] DETAIL_COLUMNS = {
-            // In this case the id needs to be fully qualified with a table name, since
-            // the content provider joins the location & weather tables in the background
-            // (both have an _id column)
-            // On the one hand, that's annoying.  On the other, you can search the weather table
-            // using the location set by the user, which is only in the Location table.
-            // So the convenience is worth it.
-            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
-            WeatherContract.WeatherEntry.COLUMN_DATE,
-            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
-            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
-            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
-            WeatherContract.WeatherEntry.COLUMN_HUMIDITY,
-            WeatherContract.WeatherEntry.COLUMN_WIND_SPEED,
-            WeatherContract.WeatherEntry.COLUMN_DEGREES,
-            WeatherContract.WeatherEntry.COLUMN_PRESSURE,
-            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+            WeatherEntry.TABLE_NAME + "." + WeatherEntry._ID,
+            WeatherEntry.COLUMN_DATE,
+            WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherEntry.COLUMN_HUMIDITY,
+            WeatherEntry.COLUMN_PRESSURE,
+            WeatherEntry.COLUMN_WIND_SPEED,
+            WeatherEntry.COLUMN_DEGREES,
+            WeatherEntry.COLUMN_WEATHER_ID,
             // This works because the WeatherProvider returns location data joined with
             // weather data, even though they're stored in two different tables.
             WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING
     };
 
-    // These indices are tied to FORECAST_COLUMNS.  If FORECAST_COLUMNS changes, these
+    // These indices are tied to DETAIL_COLUMNS.  If DETAIL_COLUMNS changes, these
     // must change.
     public static final int COL_WEATHER_ID = 0;
     public static final int COL_WEATHER_DATE = 1;
@@ -64,10 +75,20 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public static final int COL_WEATHER_MAX_TEMP = 3;
     public static final int COL_WEATHER_MIN_TEMP = 4;
     public static final int COL_WEATHER_HUMIDITY = 5;
-    public static final int COL_WEATHER_WIND_SPEED = 6;
-    public static final int COL_WEATHER_DEGREES = 7;
-    public static final int COL_WEATHER_PRESSURE = 8;
+    public static final int COL_WEATHER_PRESSURE = 6;
+    public static final int COL_WEATHER_WIND_SPEED = 7;
+    public static final int COL_WEATHER_DEGREES = 8;
     public static final int COL_WEATHER_CONDITION_ID = 9;
+
+    private ImageView mIconView;
+    private TextView mFriendlyDateView;
+    private TextView mDateView;
+    private TextView mDescriptionView;
+    private TextView mHighTempView;
+    private TextView mLowTempView;
+    private TextView mHumidityView;
+    private TextView mWindView;
+    private TextView mPressureView;
 
     public DetailFragment() {
         setHasOptionsMenu(true);
@@ -76,51 +97,60 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_detail, container, false);
-
-        ViewHolder viewHolder = new ViewHolder(view);
-        view.setTag(viewHolder);
-        return view;
+        View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
+        mIconView = (ImageView) rootView.findViewById(R.id.list_item_icon);
+        mDateView = (TextView) rootView.findViewById(R.id.list_item_date_textview);
+        mFriendlyDateView = (TextView) rootView.findViewById(R.id.list_item_day_textview);
+        mDescriptionView = (TextView) rootView.findViewById(R.id.list_item_forecast_textview);
+        mHighTempView = (TextView) rootView.findViewById(R.id.list_item_high_textview);
+        mLowTempView = (TextView) rootView.findViewById(R.id.list_item_low_textview);
+        mHumidityView = (TextView) rootView.findViewById(R.id.list_item_humidity_textview);
+        mWindView = (TextView) rootView.findViewById(R.id.list_item_winddegree_textview);
+        mPressureView = (TextView) rootView.findViewById(R.id.list_item_pressure_textview);
+        return rootView;
     }
 
-    public void onCreateOptionMenu(Menu menu, MenuInflater inflater){
-        // Inflate the menu; this adds items to the action bar if it is present/
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.detailfragment, menu);
 
-        // Locate MenuItem with ShareActionProvider
-        MenuItem item = menu.findItem(R.id.action_share);
+        // Retrieve the share menu item
+        MenuItem menuItem = menu.findItem(R.id.action_share);
 
-        // Fetch and store ShareActionProvider
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        // Get the provider and hold onto it to set/change the share intent.
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
 
-        // Attach an intent to this ShareActionProvider. You can update this at any time,
-        // like when the user selects a new pieve of data they might like to share
+        // If onLoadFinished happens before this, we can go ahead and set the share intent now.
         if (mForecast != null) {
             mShareActionProvider.setShareIntent(createShareForecastIntent());
         }
     }
 
-    private Intent createShareForecastIntent(){
+    private Intent createShareForecastIntent() {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT,mForecast + FORECAST_SHARE_HASHTAG);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mForecast + FORECAST_SHARE_HASHTAG);
         return shareIntent;
     }
 
-    /*
-    Creates and returns our cursorLoader
-    */
-    public Loader<Cursor> onCreateLoader(int id, Bundle bundle){
-        Log.v(LOG_TAG, "In onCreateLoader");
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
+    }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.v(LOG_TAG, "In onCreateLoader");
         Intent intent = getActivity().getIntent();
-        if(intent == null){
+        if (intent == null) {
             return null;
         }
 
         // Now create and return a CursorLoader that will take care of
-        // creating a cursor for the data being displayed.
+        // creating a Cursor for the data being displayed.
         return new CursorLoader(
                 getActivity(),
                 intent.getData(),
@@ -131,106 +161,61 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         );
     }
 
-    /*
-        Remove curse data for cursorAdapter before they are destroy
-     */
-    public void onLoaderReset(Loader<Cursor> loader){}
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (data != null && data.moveToFirst()) {
+            // Read weather condition ID from cursor
+            int weatherId = data.getInt(COL_WEATHER_CONDITION_ID);
+
+            // Use weather art image
+            mIconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+
+            // Read date from cursor and update views for day of week and date
+            long date = data.getLong(COL_WEATHER_DATE);
+            String friendlyDateText = Utility.getDayName(getActivity(), date);
+            String dateText = Utility.getFormattedMonthDay(getActivity(), date);
+            mFriendlyDateView.setText(friendlyDateText);
+            mDateView.setText(dateText);
+
+            // Read description from cursor and update view
+            String description = data.getString(COL_WEATHER_DESC);
+            mDescriptionView.setText(description);
+
+            // Read high temperature from cursor and update view
+            boolean isMetric = Utility.isMetric(getActivity());
+
+            double high = data.getDouble(COL_WEATHER_MAX_TEMP);
+            String highString = Utility.formatTemperature(getActivity(), high, isMetric);
+            mHighTempView.setText(highString);
+
+            // Read low temperature from cursor and update view
+            double low = data.getDouble(COL_WEATHER_MIN_TEMP);
+            String lowString = Utility.formatTemperature(getActivity(), low, isMetric);
+            mLowTempView.setText(lowString);
+
+            // Read humidity from cursor and update view
+            float humidity = data.getFloat(COL_WEATHER_HUMIDITY);
+            mHumidityView.setText(getActivity().getString(R.string.format_humidity, humidity));
+
+            // Read wind speed and direction from cursor and update view
+            float windSpeedStr = data.getFloat(COL_WEATHER_WIND_SPEED);
+            float windDirStr = data.getFloat(COL_WEATHER_DEGREES);
+            mWindView.setText(Utility.getFormattedWind(getActivity(), windSpeedStr, windDirStr));
+
+            // Read pressure from cursor and update view
+            float pressure = data.getFloat(COL_WEATHER_PRESSURE);
+            mPressureView.setText(getActivity().getString(R.string.format_pressure, pressure));
+
+            // We still need this for the share intent
+            mForecast = String.format("%s - %s - %s/%s", dateText, description, high, low);
+
+            // If onCreateOptionsMenu has already happened, we need to update the share intent now.
+            if (mShareActionProvider != null) {
+                mShareActionProvider.setShareIntent(createShareForecastIntent());
+            }
+        }
+    }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        getLoaderManager().initLoader(DETAIL_LOADER,null,this);
-
-        super.onActivityCreated(savedInstanceState);
-    }
-
-    /*
-        Set the ready curse data to the curseAdapter for uses
-     */
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data){
-        Log.v(LOG_TAG,"In onLoadFinished");
-        if(!data.moveToFirst()){ return;}
-
-        // Get the current view information
-        ViewHolder viewHolder = (ViewHolder)  getView().getTag();
-
-        // Read weather condition id from cursor
-        int weatherId = data.getInt(COL_WEATHER_ID);
-        viewHolder.iconView.setImageResource(R.drawable.ic_launcher);
-
-        // Get and set the day string
-        String dayString = Utility.getDayName(getActivity(),
-                data.getLong(COL_WEATHER_DATE));
-        viewHolder.dayView.setText(dayString);
-
-        // Get and set the date string
-        String dataString = Utility.getFormattedMonthDay(getActivity(),
-                data.getLong(COL_WEATHER_DATE));
-        viewHolder.dateView.setText(dataString);
-
-        // Get and set the weather description
-        String weatherDescription =
-                data.getString(COL_WEATHER_DESC);
-        viewHolder.descriptionView.setText(weatherDescription);
-
-        // Get the current temp setting metric or imperial
-        boolean isMetric = Utility.isMetric(getActivity());
-
-        // Get and set the high temperature
-        String high = Utility.formatTemperature(getActivity(),
-                data.getDouble(COL_WEATHER_MAX_TEMP),isMetric);
-        viewHolder.highTempView.setText(high);
-
-        // Get and set the low temperature
-        String low = Utility.formatTemperature(getActivity(),
-                data.getDouble(COL_WEATHER_MIN_TEMP),isMetric);
-        viewHolder.lowTempView.setText(low);
-
-        // Get and set the humidity (also add correct symbol to end in UI)
-        double humidity = data.getDouble(COL_WEATHER_HUMIDITY);
-        viewHolder.humidityView.setText(getActivity().getApplicationContext().
-                getString(R.string.format_humidity,humidity));
-
-        // Get and set the wind (also add correct symbols to end in UI)
-        String windDegree = Utility.getFormattedWind(getActivity(),
-                data.getFloat(COL_WEATHER_WIND_SPEED),
-                data.getFloat(COL_WEATHER_DEGREES));
-        viewHolder.windDegreeView.setText(windDegree);
-
-        // Get and set the pressure (also add correct symbols to end in UI)
-        double pressure = data.getDouble(COL_WEATHER_PRESSURE);
-        viewHolder.pressureView.setText(getActivity().
-                getString(R.string.format_pressure,pressure));
-
-        // if onCreateOptionMenu has already happend, we need to update the shared intent now.
-        if(mShareActionProvider != null){
-            mShareActionProvider.setShareIntent(createShareForecastIntent());
-        }
-    }
-    /**
-     * Cache of the childer views for a forecast list item
-     */
-    public static class ViewHolder{
-        public final ImageView iconView;
-        public final TextView dateView;
-        public final TextView dayView;
-        public final TextView descriptionView;
-        public final TextView highTempView;
-        public final TextView lowTempView;
-        public final TextView humidityView;
-        public final TextView windDegreeView;
-        public final TextView pressureView;
-
-        public ViewHolder(View view){
-            iconView = (ImageView) view.findViewById(R.id.list_item_icon);
-            dateView = (TextView) view.findViewById(R.id.list_item_date_textview);
-            dayView = (TextView) view.findViewById(R.id.list_item_day_textview);
-            descriptionView = (TextView) view.findViewById(R.id.list_item_forecast_textview);
-            highTempView = (TextView) view.findViewById(R.id.list_item_high_textview);
-            lowTempView = (TextView) view.findViewById(R.id.list_item_low_textview);
-            humidityView = (TextView) view.findViewById(R.id.list_item_humidity_textview);
-            windDegreeView = (TextView) view.findViewById(R.id.list_item_winddegree_textview);
-            pressureView = (TextView) view.findViewById(R.id.list_item_pressure_textview);
-        }
-    }
-
+    public void onLoaderReset(Loader<Cursor> loader) { }
 }
