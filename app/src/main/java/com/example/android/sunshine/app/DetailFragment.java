@@ -25,6 +25,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -164,7 +165,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if ( null != mUri ) {
             // Now create and return a CursorLoader that will take care of
-            // creating a Cursor for the data being displayed.
+            // creating a Cursor for the data being displayed
+
+            Log.v("Uri ",mUri.toString());
+
             return new CursorLoader(
                     getActivity(),
                     mUri,
@@ -196,6 +200,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             // Read description from cursor and update view
             String description = data.getString(COL_WEATHER_DESC);
             mDescriptionView.setText(description);
+            mIconView.setContentDescription(description);
 
             // Read high temperature from cursor and update view
             boolean isMetric = Utility.isMetric(getActivity());
