@@ -15,9 +15,14 @@
  */
 package com.example.android.sunshine.app;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -32,6 +37,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.android.sunshine.app.data.WeatherContract;
+import com.example.android.sunshine.app.service.SunshineService;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
@@ -42,6 +48,9 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     private ListView mListView;
     private int mPosition = ListView.INVALID_POSITION;
     private boolean mUseTodayLayout;
+
+    private AlarmManager alarmMgr;
+    private PendingIntent alarmIntent;
 
     private static final String SELECTED_KEY = "selected_position";
 
@@ -179,9 +188,22 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     private void updateWeather() {
-        FetchWeatherTask weatherTask = new FetchWeatherTask(getActivity());
-        String location = Utility.getPreferredLocation(getActivity());
-        weatherTask.execute(location);
+
+        // Create service intent with service specific information
+        Intent pIntent = new Intent(getActivity(), SunshineService.AlarmReceiver.class);
+        pIntent.putExtra(SunshineService.LOCATION_QUERY_EXTRA,
+                Utility.getPreferredLocation(getActivity()));
+
+        //Wrap in a pending intent which only fires once.
+        alarmIntent = PendingIntent.getBroadcast(getActivity(),0,pIntent,PendingIntent.FLAG_ONE_SHOT);
+
+        alarmMgr = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
+
+        // Wake-up the device to fire a on-time (non-repeating) alarm 30 second after
+        // being clicked
+        alarmMgr.set(AlarmManager.RTC_WAKEUP,
+                SystemClock.elapsedRealtime() +
+                5000,alarmIntent);
     }
 
     @Override
